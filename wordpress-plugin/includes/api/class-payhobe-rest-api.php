@@ -96,10 +96,67 @@ class PayHobe_REST_API {
      * Add CORS headers for allowed origins
      */
     private function add_cors_headers() {
+        // Handle preflight OPTIONS requests early
+        add_action('init', array($this, 'handle_preflight'));
+        
         add_action('rest_api_init', function() {
             remove_filter('rest_pre_serve_request', 'rest_send_cors_headers');
             add_filter('rest_pre_serve_request', array($this, 'send_cors_headers'));
         }, 15);
+    }
+    
+    /**
+     * Handle preflight OPTIONS requests
+     */
+    public function handle_preflight() {
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+            
+            if ($this->is_allowed_origin($origin)) {
+                header('Access-Control-Allow-Origin: ' . esc_url_raw($origin));
+                header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+                header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Requested-With, X-PayHobe-Token');
+                header('Access-Control-Allow-Credentials: true');
+                header('Access-Control-Max-Age: 86400');
+                header('Content-Length: 0');
+                header('Content-Type: text/plain');
+                exit(0);
+            }
+        }
+    }
+    
+    /**
+     * Check if origin is allowed
+     *
+     * @param string $origin Origin URL
+     * @return bool
+     */
+    private function is_allowed_origin($origin) {
+        if (empty($origin)) {
+            return false;
+        }
+        
+        $allowed_origins = get_option('payhobe_api_cors_origins', array());
+        if (!is_array($allowed_origins)) {
+            $allowed_origins = array();
+        }
+        
+        // Always allow localhost for development
+        $allowed_origins[] = 'http://localhost:3000';
+        $allowed_origins[] = 'http://localhost:3001';
+        
+        // Always allow Vercel deployments
+        if (strpos($origin, '.vercel.app') !== false) {
+            return true;
+        }
+        
+        // Add dashboard URL if set
+        $dashboard_url = get_option('payhobe_dashboard_url', '');
+        if (!empty($dashboard_url)) {
+            $allowed_origins[] = rtrim($dashboard_url, '/');
+        }
+        
+        return in_array($origin, $allowed_origins, true);
     }
     
     /**
@@ -110,19 +167,8 @@ class PayHobe_REST_API {
      */
     public function send_cors_headers($value) {
         $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
-        $allowed_origins = get_option('payhobe_api_cors_origins', array());
         
-        // Always allow localhost for development
-        $allowed_origins[] = 'http://localhost:3000';
-        $allowed_origins[] = 'http://localhost:3001';
-        
-        // Add dashboard URL if set
-        $dashboard_url = get_option('payhobe_dashboard_url', '');
-        if (!empty($dashboard_url)) {
-            $allowed_origins[] = rtrim($dashboard_url, '/');
-        }
-        
-        if (in_array($origin, $allowed_origins, true)) {
+        if ($this->is_allowed_origin($origin)) {
             header('Access-Control-Allow-Origin: ' . esc_url_raw($origin));
             header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
             header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Requested-With, X-PayHobe-Token');
