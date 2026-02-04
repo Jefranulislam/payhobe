@@ -88,6 +88,17 @@ export interface DashboardOverview {
   pending_payments: Payment[]
 }
 
+export interface MfsConfig {
+  id: number
+  provider: string
+  account_type: 'personal' | 'merchant' | 'agent'
+  account_number: string
+  account_name: string
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+}
+
 // API Functions
 export const apiClient = {
   // Auth
@@ -199,6 +210,26 @@ export const apiClient = {
   updateConfig: async (method: string, data: any) => {
     const response = await api.post(`/config/${method}`, data)
     return response.data
+  },
+
+  // MFS Configs
+  getMfsConfigs: async (): Promise<{ configs: MfsConfig[] }> => {
+    const response = await api.get('/config/mfs')
+    return response.data
+  },
+
+  createMfsConfig: async (data: Omit<MfsConfig, 'id' | 'created_at' | 'updated_at'>): Promise<MfsConfig> => {
+    const response = await api.post('/config/mfs', data)
+    return response.data
+  },
+
+  updateMfsConfig: async (id: number, data: Partial<MfsConfig>): Promise<MfsConfig> => {
+    const response = await api.put(`/config/mfs/${id}`, data)
+    return response.data
+  },
+
+  deleteMfsConfig: async (id: number): Promise<void> => {
+    await api.delete(`/config/mfs/${id}`)
   },
 }
 
