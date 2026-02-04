@@ -39,10 +39,16 @@ class PayHobe_SMS_Controller {
             'callback' => array($this, 'receive_sms'),
             'permission_callback' => array($this, 'verify_webhook'),
             'args' => array(
-                'sender' => array('required' => true, 'type' => 'string'),
-                'message' => array('required' => true, 'type' => 'string'),
+                // Support multiple field name formats
+                'sender' => array('type' => 'string'),
+                'from' => array('type' => 'string'),
+                'message' => array('type' => 'string'),
+                'text' => array('type' => 'string'),
                 'received_at' => array('type' => 'string'),
-                'source' => array('type' => 'string', 'default' => 'api')
+                'receivedStamp' => array('type' => 'string'),
+                'sentStamp' => array('type' => 'string'),
+                'source' => array('type' => 'string', 'default' => 'api'),
+                'sim' => array('type' => 'string')
             )
         ));
         
@@ -236,10 +242,61 @@ class PayHobe_SMS_Controller {
      * Receive SMS from webhook
      */
     public function receive_sms($request) {
-        $sender = sanitize_text_field($request->get_param('sender'));
-        $message = sanitize_textarea_field($request->get_param('message'));
-        $received_at = $request->get_param('received_at') ?: current_time('mysql');
+        // Support multiple field name formats from different SMS forwarder apps
+        $sender = sanitize_text_field(
+            $request->get_param('sender') 
+            ?: $request->get_param('from') 
+            ?: $request->get_param('phone') 
+            ?: $request->get_param('number')
+            ?: ''
+        );
+        
+        $message = sanitize_textarea_field(
+            $request->get_param('message') 
+            ?: $request->get_param('text') 
+            ?: $request->get_param('body') 
+            ?: $request->get_param('sms')
+            ?: ''
+        );
+        
+        // Handle timestamp formats
+        $received_at = $request->get_param('received_at') 
+            ?: $request->get_param('receivedStamp')
+            ?: $request->get_param('sentStamp')
+            ?: $request->get_param('timestamp')
+            ?: '';
+        
+        // Convert Unix timestamp to MySQL datetime if needed
+        if (!empty($received_at) && is_numeric($received_at)) {
+            // Handle milliseconds
+            if (strlen((string)$received_at) > 10) {
+                $received_at = (int)($received_at / 1000);
+            }
+            $received_at = date('Y-m-d H:i:s', (int)$received_at);
+        }
+        
+        if (empty($received_at)) {
+            $received_at = current_time('mysql');
+        }
+        
         $source = $request->get_param('source') ?: 'android_forwarder';
+        
+        // Validate required fields
+        if (empty($sender)) {
+            return PayHobe_REST_API::error_response(
+                'payhobe_missing_sender',
+                __('Sender/from number is required.', 'payhobe'),
+                400
+            );
+        }
+        
+        if (empty($message)) {
+            return PayHobe_REST_API::error_response(
+                'payhobe_missing_message',
+                __('Message/text content is required.', 'payhobe'),
+                400
+            );
+        }
         
         return $this->process_incoming_sms($sender, $message, $received_at, $source, $request->get_body());
     }
