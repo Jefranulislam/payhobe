@@ -1,0 +1,6 @@
+{
+  "/dashboard/payments/page": "app/dashboard/payments/page.js",
+  "/dashboard/sms/page": "app/dashboard/sms/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
+}
