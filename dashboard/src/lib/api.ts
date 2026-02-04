@@ -89,7 +89,7 @@ export interface DashboardOverview {
 }
 
 export interface MfsConfig {
-  id: number
+  config_id: number
   provider: string
   account_type: 'personal' | 'merchant' | 'agent'
   account_number: string
