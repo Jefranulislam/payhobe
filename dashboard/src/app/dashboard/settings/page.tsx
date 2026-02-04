@@ -240,7 +240,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
               </div>
-            ) : mfsData?.configs?.length > 0 ? (
+            ) : (mfsData?.configs?.length ?? 0) > 0 ? (
               <div className="divide-y divide-gray-200">
                 {mfsData.configs.map((config: MfsConfig) => (
                   <div
