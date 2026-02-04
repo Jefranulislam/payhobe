@@ -242,7 +242,7 @@ export default function SettingsPage() {
               </div>
             ) : (mfsData?.configs?.length ?? 0) > 0 ? (
               <div className="divide-y divide-gray-200">
-                {mfsData.configs.map((config: MfsConfig) => (
+                {mfsData!.configs.map((config: MfsConfig) => (
                   <div
                     key={config.config_id}
                     className="py-4 flex items-center justify-between gap-4"
