@@ -40,7 +40,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Redirect to login
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('payhobe_token')
+        localStorage.removeItem('payhobe_api_url')
+        localStorage.removeItem('payhobe_api_token')
         window.location.href = '/login'
       }
     }
