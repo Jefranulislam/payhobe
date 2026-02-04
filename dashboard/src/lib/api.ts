@@ -218,18 +218,18 @@ export const apiClient = {
     return response.data
   },
 
-  createMfsConfig: async (data: Omit<MfsConfig, 'id' | 'created_at' | 'updated_at'>): Promise<MfsConfig> => {
+  createMfsConfig: async (data: Omit<MfsConfig, 'config_id' | 'created_at' | 'updated_at'>): Promise<MfsConfig> => {
     const response = await api.post('/config/mfs', data)
     return response.data
   },
 
-  updateMfsConfig: async (id: number, data: Partial<MfsConfig>): Promise<MfsConfig> => {
-    const response = await api.put(`/config/mfs/${id}`, data)
+  updateMfsConfig: async (config_id: number, data: Partial<MfsConfig>): Promise<MfsConfig> => {
+    const response = await api.put(`/config/mfs/${config_id}`, data)
     return response.data
   },
 
-  deleteMfsConfig: async (id: number): Promise<void> => {
-    await api.delete(`/config/mfs/${id}`)
+  deleteMfsConfig: async (config_id: number): Promise<void> => {
+    await api.delete(`/config/mfs/${config_id}`)
   },
 }
 
