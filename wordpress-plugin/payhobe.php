@@ -21,6 +21,44 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Handle CORS preflight requests early (before WordPress loads)
+payhobe_handle_cors();
+
+/**
+ * Handle CORS headers for API requests
+ */
+function payhobe_handle_cors() {
+    // Only handle requests to our API
+    $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+    if (strpos($request_uri, '/wp-json/payhobe/') === false) {
+        return;
+    }
+    
+    $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+    
+    // Allow Vercel domains and localhost
+    $is_allowed = (
+        strpos($origin, '.vercel.app') !== false ||
+        strpos($origin, 'localhost:3000') !== false ||
+        strpos($origin, 'localhost:3001') !== false
+    );
+    
+    if ($is_allowed && !empty($origin)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Authorization, Content-Type, X-Requested-With, X-PayHobe-Token');
+        header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Max-Age: 86400');
+        
+        // Handle preflight OPTIONS request
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            header('Content-Length: 0');
+            header('Content-Type: text/plain');
+            exit(0);
+        }
+    }
+}
+
 // Plugin constants
 define('PAYHOBE_VERSION', '1.0.0');
 define('PAYHOBE_PLUGIN_FILE', __FILE__);
